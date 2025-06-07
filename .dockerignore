@@ -1,0 +1,15 @@
+**/bin/
+**/obj/
+**/.vs/
+**/.vscode/
+.git
+.gitignore
+README.md
+docker-compose*
+.dockerignore
+ForwardProxy.Tests/
+Tests/
+bin/
+obj/
+src/bin/
+src/obj/

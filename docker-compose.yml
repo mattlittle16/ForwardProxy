@@ -1,0 +1,14 @@
+services:
+  # service images to be be created
+  api: 
+    build:       
+      dockerfile: ./Dockerfile
+      context: ./src/
+    ports:
+      # list of port mappings
+      - 80:80
+      #- 8081:8081
+    environment:
+      # list of environment variables within the container
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ASPNETCORE_URLS=http://+:80;
