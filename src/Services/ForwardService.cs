@@ -9,13 +9,28 @@ public interface IForwardService
 
 public class ForwardService(ILogger<ForwardService> logger, IHttpClientFactory httpClientFactory) : IForwardService
 {
-    private HashSet<string> HeadersToSkip = new(StringComparer.OrdinalIgnoreCase)
+    private HashSet<string> RequestHeadersToSkip = new(StringComparer.OrdinalIgnoreCase)
     {
         "host",
         "x-forward-url",
         "content-length",
         "transfer-encoding",
         "connection",
+    };
+
+    private HashSet<string> ResponseHeadersToSkip = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "transfer-encoding",
+        "connection",
+        "upgrade",
+        "proxy-connection",
+        "proxy-authenticate",
+        "proxy-authorization",
+        "te",
+        "trailers",
+        "content-length",
+        "content-type"
+        //"server" // Optional: you might want to include this
     };
 
     public async Task<ForwardModel> ForwardAsync(HttpContext context)
@@ -28,10 +43,29 @@ public class ForwardService(ILogger<ForwardService> logger, IHttpClientFactory h
         await AddHeadersAndCookiesAsync(message, context);
 
         var response = await client.SendAsync(message);
+        
+        var responseHeaders = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);    
+        foreach (var header in response.Headers)
+        {
+            if (!ResponseHeadersToSkip.Contains(header.Key))
+            {
+                responseHeaders[header.Key] = string.Join(", ", header.Value);
+            }
+        }
+        
+        foreach (var header in response.Content.Headers)
+        {
+            if (!ResponseHeadersToSkip.Contains(header.Key))
+            {
+                responseHeaders[header.Key] = string.Join(", ", header.Value);
+            }
+        }
+        
         return new ForwardModel
         {
             StatusCode = (int)response.StatusCode,
-            ResponseData = await response.Content.ReadAsStringAsync()
+            ResponseData = await response.Content.ReadAsStringAsync(),
+            Headers = responseHeaders
         };
     }
 
@@ -40,7 +74,7 @@ public class ForwardService(ILogger<ForwardService> logger, IHttpClientFactory h
         // Forward appropriate headers from the original request
         foreach (var header in context.Request.Headers)
         {
-            if (!HeadersToSkip.Contains(header.Key))
+            if (!RequestHeadersToSkip.Contains(header.Key))
             {
                 try
                 {
