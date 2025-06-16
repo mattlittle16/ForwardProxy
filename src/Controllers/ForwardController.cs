@@ -32,7 +32,28 @@ public class ForwardController(ILogger<ForwardController> logger, IForwardServic
                 }
             }
         }
+
+        var exposeHeaders = new List<string>
+        {
+            "ETag",
+            "Server", 
+            "Location",
+            "x-Amz-Cf-Id",
+            "X-Amz-Cd-Pop",
+            "X-Cache"
+        };
         
+        if (Response.Headers.ContainsKey("Access-Control-Expose-Headers"))
+        {
+            var existingHeaders = Response.Headers["Access-Control-Expose-Headers"].ToString().Split(',')
+                .Select(h => h.Trim()).Where(h => !string.IsNullOrEmpty(h));
+            exposeHeaders.AddRange(existingHeaders);
+            exposeHeaders = exposeHeaders.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        }
+        
+        Response.Headers["Access-Control-Expose-Headers"] = string.Join(", ", exposeHeaders);
+
+        logger.LogInformation("Response Headers Forwarded: {0}", string.Join(", ", Response.Headers.Select(h => $"{h.Key}: {h.Value}")));
         return StatusCode(forwardModel.StatusCode, forwardModel.ResponseData);
     }
 }

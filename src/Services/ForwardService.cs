@@ -35,7 +35,7 @@ public class ForwardService(ILogger<ForwardService> logger, IHttpClientFactory h
 
     public async Task<ForwardModel> ForwardAsync(HttpContext context)
     {
-        logger.LogInformation("ForwardService ForwardAsync method called");
+        logger.LogInformation("ForwardService ForwardAsync method called: {0}", context.Request.Method);
         var client = httpClientFactory.CreateClient("ignore-ssl");
 
         var message = new HttpRequestMessage(new HttpMethod(context.Request.Method.ToUpperInvariant()), context.Request.Headers["x-forward-url"].ToString());
